@@ -4,7 +4,7 @@ An MCP (Model Context Protocol) server for wealth management portal operations v
 
 ## Prerequisites
 
-- **Node.js**: Version 18.0.0 or higher
+- **Node.js**: Version 22.0.0 or higher
 - **npm**: Latest version
 - **Cursor IDE**: With MCP support enabled
 - **OneVest API Access**: Valid API key and organization credentials
@@ -292,7 +292,7 @@ DEBUG=oneagent:* npm run dev
 
 - [ ] Verify team member has OneVest API access
 - [ ] Provide correct `ORGANIZATION_ID` and staging endpoint
-- [ ] Ensure team member has Node.js 18+ installed
+- [ ] Ensure team member has Node.js 22+ installed
 - [ ] Test MCP server functionality after setup
 
 ## Deployment
