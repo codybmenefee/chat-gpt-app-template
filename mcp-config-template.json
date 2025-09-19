@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "oneAgent": {
+      "command": "/path/to/your/node",
+      "args": [
+        "/path/to/your/one-agent/dist/index.js"
+      ],
+      "cwd": "/path/to/your/one-agent",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

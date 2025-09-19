@@ -1,0 +1,42 @@
+mutation updateOrganization($input: UpdateOrganizationInput!) {
+  updateOrganization(input: $input) {
+    organization {
+      id
+      __typename
+    }
+    __typename
+  }
+}
+
+varialbes:
+{
+  "input": {
+    "organizationId": "67e4154fad4adc001136ff92",
+    "faviconLink": "test",
+    "browserTabTitle": "test",
+    "themeTokens": {
+      "ref": {
+        "palette": {
+          "primary50": "#3a4b9e"
+        }
+      },
+      "comp": {
+        "layout": {
+          "backgroundColor": "#9abd9c"
+        },
+        "card": {
+          "borderRadius": "16px"
+        },
+        "button": {
+          "borderRadius": "100px"
+        }
+      },
+      "sys": {
+        "color": {
+          "background": "#dce3ea"
+        }
+      }
+    },
+    "theme": {}
+  }
+}

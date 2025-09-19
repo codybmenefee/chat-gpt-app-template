@@ -1,0 +1,73 @@
+# Wealth Portal MCP Server - Cursor Rules
+
+## Project Overview
+This is an MCP (Model Context Protocol) server for wealth management portal operations via GraphQL. The server provides specific, purpose-built tools for portal operations rather than generic GraphQL tools.
+
+## Key Files
+- `src/index.ts` - Main server entry point
+- `src/tools/` - MCP tool implementations
+- `src/config/` - Configuration management
+- `.env.local` - Server configuration (gitignored)
+
+## Architecture
+- **Specific Tools Only**: Each tool has a clear, specific purpose
+- **Portal Tools**: High-level portal configuration CRUD operations
+- **Config Tools**: Server configuration management
+- **Type Safety**: Full TypeScript with Zod validation
+
+## Development Guidelines
+1. Always use TypeScript with strict mode
+2. Validate all inputs with Zod schemas
+3. Handle errors gracefully with descriptive messages
+4. Use async/await for all async operations
+5. Follow the existing tool pattern for new tools
+6. **CRITICAL**: Create specific, purpose-built tools only - NO generic GraphQL tools
+
+## Tool Philosophy
+- **Specific Over Generic**: Each tool should have a clear, single responsibility
+- **No Generic GraphQL**: Never create generic `graphql_query`, `graphql_mutation`, or `graphql_introspect` tools
+- **Purpose-Built**: Tools should be designed for specific business operations
+- **Clear Naming**: Tool names should clearly indicate their specific purpose
+
+## Available Tools
+- `update_organization_theme` - Organization branding and theme management
+- `upload_file` - General file uploads (documents, user avatars)
+- `view_pdf` - PDF content extraction and viewing
+- `config_status` - Server configuration status
+- `config_set` - Server configuration updates
+
+## Tool Selection Guidelines
+**For Organization Logos:**
+- ✅ ALWAYS use `update_organization_theme` - handles logo upload + org update
+- ❌ NEVER use `upload_file` for org logos - only creates file record
+
+**For General Files:**
+- ✅ Use `upload_file` for documents, user avatars, general images
+- ❌ Don't use `update_organization_theme` for non-branding files
+
+## Adding New Tools
+When adding new tools:
+1. **Be Specific**: Each tool should have one clear purpose
+2. **No Generic GraphQL**: Never create generic query/mutation tools
+3. **Business-Focused**: Tools should solve specific business problems
+4. **Clear Naming**: Use descriptive names that indicate the tool's purpose
+5. **Proper Validation**: Use Zod schemas for all input validation
+6. **Error Handling**: Include comprehensive error handling
+
+## Error Handling
+- All tools return structured error responses
+- GraphQL errors include context and suggestions
+- Configuration errors are validated before saving
+- Network errors include retry information
+
+## Configuration
+- **NEVER create config.json files** - This project uses .env.local for configuration
+- Configuration is managed via environment variables in .env.local
+- Organization ID and User ID are read from .env.local
+- Use `config_set` tool to update configuration via MCP
+
+## Testing
+- Use `npm run dev` for development with hot reload
+- Use `npm run build && npm start` for production
+- Check `.env.local` exists and is valid before running
+- Use `config_set` tool to update configuration via MCP

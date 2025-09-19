@@ -1,0 +1,132 @@
+mutation updateOrganization($input: UpdateOrganizationInput!) {
+  updateOrganization(input: $input) {
+    organization {
+      id
+      __typename
+    }
+    __typename
+  }
+}
+
+{
+  "input": {
+    "organizationId": "67e4154fad4adc001136ff92",
+    "faviconLink": null,
+    "browserTabTitle": null,
+    "themeTokens": {
+      "ref": {
+        "palette": {
+          "primary50": "#531620"
+        }
+      },
+      "comp": {
+        "layout": {
+          "backgroundColor": "#FFFFFF"
+        },
+        "card": {
+          "borderRadius": "12px"
+        },
+        "button": {
+          "borderRadius": "8px"
+        }
+      },
+      "sys": {
+        "color": {
+          "background": "#FFFFFF"
+        }
+      }
+    },
+    "theme": {}
+  }
+}
+
+query fetchFileUploadUrl($input: FetchFileUploadUrlInput!) {
+  fetchFileUploadUrl(input: $input) {
+    temporarySignedURL
+    timestamp
+    __typename
+  }
+}
+
+{
+  "input": {
+    "objectType": "ORGANIZATION",
+    "objectId": "67e4154fad4adc001136ff92",
+    "fileName": "G0S7wqqXIAEVTQl.jpg",
+    "type": "LOGO",
+    "userId": "67e4154fad4adc001136ff92",
+    "generateUniqueFileName": true
+  }
+}
+
+mutation createFileDocument($input: CreateFileDocumentInput!) {
+  createFileDocument(input: $input) {
+    fileDocument {
+      id
+      name
+      fileName
+      s3Key
+      type
+      __typename
+    }
+    __typename
+  }
+}
+
+{
+  "input": {
+    "fileName": "G0S7wqqXIAEVTQl.jpg",
+    "objectId": "67e4154fad4adc001136ff92",
+    "objectType": "ORGANIZATION",
+    "name": "G0S7wqqXIAEVTQl.jpg",
+    "type": "LOGO",
+    "permissionType": "PUBLIC",
+    "sourceType": "LOGO",
+    "timestamp": 1758232280781
+  }
+}
+
+query fetchFileDocuments($filter: FileDocumentQueryFilter) {
+  fetchFileDocuments(
+    input: {
+      filter: $filter
+      pagination: { perPage: 1, sortDesc: false, sortField: "createdAt" }
+    }
+  ) {
+    fileDocuments {
+      id
+      name
+      __typename
+    }
+    __typename
+  }
+}
+
+{
+  "filter": {
+    "organizationId": "67e4154fad4adc001136ff92",
+    "types": [
+      "LOGO"
+    ],
+    "objectTypes": [
+      "ORGANIZATION"
+    ]
+  }
+}
+
+query fetchFileDocumentDownloadUrl($fileDocumentId: ObjectID!) {
+  fetchFileDocument(fileDocumentId: $fileDocumentId) {
+    fileDocument {
+      downloadUrl
+      fileName
+      mediaType
+      __typename
+    }
+    __typename
+  }
+}
+
+{
+  "fileDocumentId": "68cc7ed9693d7993c6b2db10"
+}
+
