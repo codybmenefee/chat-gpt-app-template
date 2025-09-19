@@ -11,7 +11,35 @@ An MCP (Model Context Protocol) server for wealth management portal operations v
 
 ## Quick Start
 
-### 1. Clone and Install
+### Option 1: One-Command Installation (Recommended for Teams)
+
+Copy and paste this command into your terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/codybmenefee/one-agent/main/install.sh | bash
+```
+
+Or if you have the repository cloned locally:
+
+```bash
+cd /path/to/one-agent && ./install.sh
+```
+
+**What this does:**
+- Checks Node.js version compatibility
+- Installs project dependencies
+- Builds the MCP server
+- Creates MCP configuration for Cursor
+- Places the configuration in the correct Cursor directory
+
+**After installation:**
+1. Restart Cursor
+2. Set up your `.env.local` file with required configuration
+3. The OneAgent MCP server will be available in Cursor
+
+### Option 2: Manual Installation
+
+#### 1. Clone and Install
 
 ```bash
 # Clone the repository
@@ -22,7 +50,7 @@ cd one-agent
 npm install
 ```
 
-### 2. Configure Environment
+#### 2. Configure Environment
 
 ```bash
 # Copy the template environment file
@@ -32,14 +60,14 @@ cp .env.local.template .env.local
 nano .env.local  # or use your preferred editor
 ```
 
-### 3. Build the Project
+#### 3. Build the Project
 
 ```bash
 # Build the TypeScript project
 npm run build
 ```
 
-### 4. Configure Cursor MCP
+#### 4. Configure Cursor MCP
 
 Add the OneAgent MCP server to your Cursor MCP configuration:
 
@@ -68,7 +96,7 @@ Add the OneAgent MCP server to your Cursor MCP configuration:
 - Replace `/path/to/your/one-agent` with the actual path to your cloned repository
 - The server runs from the built `dist/index.js` file, not the source files
 
-### 5. Restart Cursor
+#### 5. Restart Cursor
 
 After updating the MCP configuration, restart Cursor IDE to load the new MCP server.
 

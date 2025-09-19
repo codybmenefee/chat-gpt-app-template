@@ -10,7 +10,10 @@
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "lint:fix": "eslint src --ext .ts --fix",
+    "deploy": "./scripts/deploy.sh",
+    "deploy:installer": "vercel --prod",
+    "preview:installer": "vercel dev"
   },
   "keywords": [
     "mcp",

@@ -46,3 +46,4 @@ simple-test-server.js
 # Temporary files
 *.tmp
 *.temp
+.vercel

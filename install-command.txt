@@ -1,0 +1,44 @@
+# OneAgent MCP Server Installation Command
+
+Copy and paste this command into your terminal to install the OneAgent MCP server for Cursor:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/codybmenefee/one-agent/main/install.sh | bash
+```
+
+Or if you have the repository cloned locally:
+
+```bash
+cd /path/to/one-agent && ./install.sh
+```
+
+## Prerequisites
+
+- Node.js 22.0.0 or higher
+- Cursor IDE installed
+- Git (for cloning the repository)
+
+## What this does
+
+1. Checks Node.js version compatibility
+2. Installs project dependencies
+3. Builds the MCP server
+4. Creates MCP configuration for Cursor
+5. Places the configuration in the correct Cursor directory
+
+## After Installation
+
+1. Restart Cursor
+2. Set up your `.env.local` file with required configuration
+3. The OneAgent MCP server will be available in Cursor
+
+## Manual Installation
+
+If you prefer to install manually:
+
+1. Clone the repository: `git clone <repo-url>`
+2. Navigate to the directory: `cd one-agent`
+3. Install dependencies: `npm install`
+4. Build the project: `npm run build`
+5. Copy the MCP configuration to Cursor's config directory
+6. Restart Cursor
