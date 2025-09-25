@@ -12,6 +12,7 @@ interface Tool {
 export class ConfigTools {
   private configManager: ConfigManager;
   private tools: Tool[] = [];
+  private failedAttempts: Map<string, { count: number; lastAttempt: number; errors: string[] }> = new Map();
 
   constructor(configManager: ConfigManager) {
     this.configManager = configManager;
@@ -71,8 +72,62 @@ export class ConfigTools {
       throw new Error(`Tool ${name} not found`);
     }
 
-    const validatedArgs = tool.inputSchema.parse(args);
-    return await tool.handler(validatedArgs);
+    try {
+      const validatedArgs = tool.inputSchema.parse(args);
+      
+      // Clear failed attempts on successful validation
+      this.clearFailedAttempts(name);
+      
+      return await tool.handler(validatedArgs);
+    } catch (validationError) {
+      // Track failed attempts for loop detection
+      this.trackFailedAttempt(name, validationError instanceof Error ? validationError.message : String(validationError));
+      
+      // Check if we're in a loop (3+ failed attempts in last 2 minutes)
+      const attemptInfo = this.failedAttempts.get(name);
+      if (attemptInfo && attemptInfo.count >= 3 && (Date.now() - attemptInfo.lastAttempt) < 120000) {
+        const errorMessage = `LOOP DETECTED: This tool has failed ${attemptInfo.count} times in the last 2 minutes with similar errors. Please STOP retrying and ask the user for clarification or different parameters. Recent errors: ${attemptInfo.errors.slice(-3).join('; ')}`;
+        throw new Error(errorMessage);
+      }
+      
+      // Re-throw the original validation error
+      throw validationError;
+    }
+  }
+
+  private trackFailedAttempt(toolName: string, errorMessage: string) {
+    const now = Date.now();
+    const existing = this.failedAttempts.get(toolName);
+    
+    if (existing) {
+      // Reset if more than 5 minutes have passed
+      if (now - existing.lastAttempt > 300000) {
+        this.failedAttempts.set(toolName, {
+          count: 1,
+          lastAttempt: now,
+          errors: [errorMessage]
+        });
+      } else {
+        // Increment count and add error
+        existing.count++;
+        existing.lastAttempt = now;
+        existing.errors.push(errorMessage);
+        // Keep only last 5 errors
+        if (existing.errors.length > 5) {
+          existing.errors = existing.errors.slice(-5);
+        }
+      }
+    } else {
+      this.failedAttempts.set(toolName, {
+        count: 1,
+        lastAttempt: now,
+        errors: [errorMessage]
+      });
+    }
+  }
+
+  private clearFailedAttempts(toolName: string) {
+    this.failedAttempts.delete(toolName);
   }
 
   private async getConfig() {

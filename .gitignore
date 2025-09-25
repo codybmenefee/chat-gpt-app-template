@@ -39,6 +39,9 @@ debug-*.js
 basic-test.js
 cursor-mcp-test.js
 simple-test-server.js
+debug-*.json
+temp-*.json
+test-*.json
 
 # Shell scripts (unless essential)
 *.sh

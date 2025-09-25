@@ -1,0 +1,98 @@
+{
+  "description": "Example theme with dramatic elevation settings",
+  "themeTokens": {
+    "ref": {
+      "palette": {
+        "primary50": "#408CC2",
+        "supportOne50": "#3A78B5",
+        "supportTwo50": "#EA884D",
+        "supportThree50": "#602FAD",
+        "supportFour50": "#62B46A",
+        "supportFive50": "#0E2A4E",
+        "supportSix50": "#D65F85"
+      }
+    },
+    "sys": {
+      "color": {
+        "background": "#F6F7F8"
+      },
+      "borderRadius": {
+        "xl": "4px"
+      },
+      "elevation": {
+        "surface": "8px 8px 32px 4px rgba(0, 0, 0, 0.25), 0px 4px 8px 0px rgba(0, 0, 0, 0.15)"
+      }
+    },
+    "comp": {
+      "layout": {
+        "backgroundColor": "#0E2A4E",
+        "textColor": "#FFFFFF"
+      },
+      "lineChart": {
+        "tension": 0,
+        "color": "#408CC2",
+        "showAxis": true
+      },
+      "button": {
+        "borderRadius": "2px",
+        "lg": {
+          "height": "40px",
+          "fontSize": "16px"
+        },
+        "filled": {
+          "primary": {
+            "hovered": {
+              "container": {
+                "color": "#1C539C"
+              },
+              "text": {
+                "color": "#FFFFFF"
+              }
+            },
+            "enabled": {
+              "container": {
+                "color": "#0E2A4E"
+              },
+              "text": {
+                "color": "#FFFFFF"
+              }
+            }
+          }
+        },
+        "outlined": {
+          "primary": {
+            "enabled": {
+              "container": {
+                "color": "#EFF2FB"
+              },
+              "text": {
+                "color": "#0E2A4E"
+              }
+            }
+          }
+        }
+      },
+      "tabNav": {
+        "background": {
+          "active": "#CAD5D6"
+        }
+      },
+      "selectionChip": {
+        "borderRadius": "4px",
+        "background": {
+          "active": "#CAD5D6"
+        }
+      },
+      "typography": {
+        "headingSmall": {
+          "fontFamily": "Causten Round",
+          "fontSize": "24px"
+        },
+        "displayLargeVariant": {
+          "fontFamily": "Causten Round",
+          "fontSize": "42px"
+        }
+      }
+    }
+  }
+}

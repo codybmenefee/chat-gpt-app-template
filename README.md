@@ -16,16 +16,17 @@ An MCP (Model Context Protocol) server for wealth management portal operations v
 Copy and paste this command into your terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/codybmenefee/one-agent/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/codybmenefee/one-agent/main/scripts/install.sh | bash
 ```
 
 Or if you have the repository cloned locally:
 
 ```bash
-cd /path/to/one-agent && ./install.sh
+cd /path/to/one-agent && ./scripts/install.sh
 ```
 
 **What this does:**
+
 - Checks Node.js version compatibility
 - Installs project dependencies
 - Builds the MCP server
@@ -33,6 +34,7 @@ cd /path/to/one-agent && ./install.sh
 - Places the configuration in the correct Cursor directory
 
 **After installation:**
+
 1. Restart Cursor
 2. Set up your `.env.local` file with required configuration
 3. The OneAgent MCP server will be available in Cursor
@@ -373,6 +375,48 @@ DEBUG=oneagent:* npm run dev
    ```bash
    npm start
    ```
+
+## Loop Prevention System
+
+The MCP server includes built-in loop detection to prevent agents from getting stuck in infinite retry loops:
+
+### How It Works
+- **Tracks Failed Attempts**: Monitors validation failures for each tool
+- **Detects Patterns**: Identifies when the same tool fails 3+ times in 2 minutes
+- **Clear Error Messages**: Provides explicit "LOOP DETECTED" messages with guidance
+- **Automatic Reset**: Clears tracking after 5 minutes of inactivity
+
+### Agent Behavior
+When agents encounter "LOOP DETECTED" errors, they should:
+- **STOP** retrying immediately
+- **APOLOGIZE** to the user
+- **ASK** for clarification or different parameters
+- **SUGGEST** alternative approaches
+
+### Configuration
+Loop detection is automatically enabled and requires no configuration. The system tracks:
+
+- Tool name and failure count
+- Timestamp of last attempt
+- Recent error messages for context
+
+## Repository Structure
+
+```text
+one-agent/
+├── src/                    # Source code
+│   ├── config/            # Configuration management
+│   ├── tools/             # MCP tool implementations
+│   └── utils/             # Utility functions
+├── dist/                  # Built JavaScript files
+├── docs/                  # Documentation
+│   ├── installation/      # Installation guides
+│   ├── deployment/        # Deployment guides
+│   └── ROADMAP.md         # Development roadmap
+├── examples/              # Example theme configurations
+├── scripts/               # Build and deployment scripts
+└── config/                # Configuration templates
+```
 
 ## Security Notes
 

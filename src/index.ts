@@ -102,6 +102,9 @@ class WealthPortalMCPServer {
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
+      
+      console.error('DEBUG MCP: Tool name:', name);
+      console.error('DEBUG MCP: Raw args received:', JSON.stringify(args, null, 2));
 
       try {
         // Route to appropriate tool handler

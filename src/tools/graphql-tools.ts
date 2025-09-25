@@ -14,6 +14,7 @@ export class GraphQLTools {
   private client: GraphQLClient;
   private tools: Tool[] = [];
   private configManager: ConfigManager;
+  private failedAttempts: Map<string, { count: number; lastAttempt: number; errors: string[] }> = new Map();
 
   constructor(client: GraphQLClient, configManager: ConfigManager) {
     this.client = client;
@@ -41,12 +42,18 @@ export class GraphQLTools {
             permissionType: z.enum(['PUBLIC', 'PRIVATE', 'RESTRICTED']).default('PUBLIC'),
           }).optional(),
           
-          // Theme tokens - exactly as defined in your example
+          // Theme tokens - comprehensive schema supporting all GraphQL attributes
           themeTokens: z.object({
             // Reference tokens (design system foundation)
             ref: z.object({
               palette: z.object({
                 primary50: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                supportOne50: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                supportTwo50: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                supportThree50: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                supportFour50: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                supportFive50: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                supportSix50: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
               }).optional(),
             }).optional(),
             
@@ -54,12 +61,97 @@ export class GraphQLTools {
             comp: z.object({
               layout: z.object({
                 backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                textColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
               }).optional(),
               card: z.object({
                 borderRadius: z.string().regex(/^\d+px$/, 'Must be valid CSS border radius (e.g., "16px")').optional(),
               }).optional(),
               button: z.object({
-                borderRadius: z.string().regex(/^\d+px$/, 'Must be valid CSS border radius (e.g., "100px")').optional(),
+                borderRadius: z.string().regex(/^\d+px$/, 'Must be valid CSS border radius (e.g., "2px")').optional(),
+                lg: z.object({
+                  height: z.string().regex(/^\d+px$/, 'Must be valid CSS height (e.g., "40px")').optional(),
+                  fontSize: z.string().regex(/^\d+px$/, 'Must be valid CSS font size (e.g., "16px")').optional(),
+                }).optional(),
+                filled: z.object({
+                  primary: z.object({
+                    hovered: z.object({
+                      container: z.object({
+                        color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                      }).optional(),
+                      text: z.object({
+                        color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                      }).optional(),
+                    }).optional(),
+                    enabled: z.object({
+                      container: z.object({
+                        color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                      }).optional(),
+                      text: z.object({
+                        color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                      }).optional(),
+                    }).optional(),
+                  }).optional(),
+                }).optional(),
+                outlined: z.object({
+                  primary: z.object({
+                    enabled: z.object({
+                      container: z.object({
+                        color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                      }).optional(),
+                      text: z.object({
+                        color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                      }).optional(),
+                    }).optional(),
+                  }).optional(),
+                }).optional(),
+              }).optional(),
+              tabNav: z.object({
+                background: z.object({
+                  active: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                }).optional(),
+              }).optional(),
+              selectionChip: z.object({
+                borderRadius: z.string().regex(/^\d+px$/, 'Must be valid CSS border radius (e.g., "4px")').optional(),
+                background: z.object({
+                  active: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                }).optional(),
+              }).optional(),
+              textField: z.object({
+                textColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                labelColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                fontSize: z.string().regex(/^\d+px$/, 'Must be valid CSS font size (e.g., "16px")').optional(),
+                borderColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                errorColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+              }).optional(),
+              helpText: z.object({
+                errorColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+              }).optional(),
+              statusBar: z.object({
+                containerColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                borderColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                borderRadius: z.number().optional(),
+                activeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+              }).optional(),
+              typography: z.object({
+                headingSmall: z.object({
+                  fontFamily: z.string().optional(),
+                  fontSize: z.string().regex(/^\d+px$/, 'Must be valid CSS font size (e.g., "24px")').optional(),
+                }).optional(),
+                displayLargeVariant: z.object({
+                  fontFamily: z.string().optional(),
+                  fontSize: z.string().regex(/^\d+px$/, 'Must be valid CSS font size (e.g., "42px")').optional(),
+                }).optional(),
+                bodySmall: z.object({
+                  fontSize: z.string().regex(/^\d+px$/, 'Must be valid CSS font size (e.g., "20px")').optional(),
+                  fontWeight: z.number().optional(),
+                  lineHeight: z.string().regex(/^\d+px$/, 'Must be valid CSS line height (e.g., "16px")').optional(),
+                  letterSpacing: z.string().regex(/^\d+\.?\d*px$/, 'Must be valid CSS letter spacing (e.g., "0.25px")').optional(),
+                }).optional(),
+              }).optional(),
+              lineChart: z.object({
+                tension: z.number().optional(),
+                color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+                showAxis: z.boolean().optional(),
               }).optional(),
             }).optional(),
             
@@ -67,6 +159,12 @@ export class GraphQLTools {
             sys: z.object({
               color: z.object({
                 background: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be valid hex color').optional(),
+              }).optional(),
+              borderRadius: z.object({
+                xl: z.string().regex(/^\d+px$/, 'Must be valid CSS border radius (e.g., "4px")').optional(),
+              }).optional(),
+              elevation: z.object({
+                surface: z.string().optional(), // Complex shadow values like "2px 2px 10px 2px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.10)"
               }).optional(),
             }).optional(),
           }).optional(),
@@ -108,8 +206,65 @@ export class GraphQLTools {
       throw new Error('Invalid organization ID provided. Please omit the organizationId parameter to use the configured value, or provide a valid organization ID.');
     }
 
-    const validatedArgs = tool.inputSchema.parse(args);
-    return await tool.handler(validatedArgs);
+    console.log('DEBUG: Raw args before validation:', JSON.stringify(args, null, 2));
+    
+    try {
+      const validatedArgs = tool.inputSchema.parse(args);
+      console.log('DEBUG: Validated args after validation:', JSON.stringify(validatedArgs, null, 2));
+      
+      // Clear failed attempts on successful validation
+      this.clearFailedAttempts(name);
+      
+      return await tool.handler(validatedArgs);
+    } catch (validationError) {
+      // Track failed attempts for loop detection
+      this.trackFailedAttempt(name, validationError instanceof Error ? validationError.message : String(validationError));
+      
+      // Check if we're in a loop (3+ failed attempts in last 2 minutes)
+      const attemptInfo = this.failedAttempts.get(name);
+      if (attemptInfo && attemptInfo.count >= 3 && (Date.now() - attemptInfo.lastAttempt) < 120000) {
+        const errorMessage = `LOOP DETECTED: This tool has failed ${attemptInfo.count} times in the last 2 minutes with similar errors. Please STOP retrying and ask the user for clarification or different parameters. Recent errors: ${attemptInfo.errors.slice(-3).join('; ')}`;
+        throw new Error(errorMessage);
+      }
+      
+      // Re-throw the original validation error
+      throw validationError;
+    }
+  }
+
+  private trackFailedAttempt(toolName: string, errorMessage: string) {
+    const now = Date.now();
+    const existing = this.failedAttempts.get(toolName);
+    
+    if (existing) {
+      // Reset if more than 5 minutes have passed
+      if (now - existing.lastAttempt > 300000) {
+        this.failedAttempts.set(toolName, {
+          count: 1,
+          lastAttempt: now,
+          errors: [errorMessage]
+        });
+      } else {
+        // Increment count and add error
+        existing.count++;
+        existing.lastAttempt = now;
+        existing.errors.push(errorMessage);
+        // Keep only last 5 errors
+        if (existing.errors.length > 5) {
+          existing.errors = existing.errors.slice(-5);
+        }
+      }
+    } else {
+      this.failedAttempts.set(toolName, {
+        count: 1,
+        lastAttempt: now,
+        errors: [errorMessage]
+      });
+    }
+  }
+
+  private clearFailedAttempts(toolName: string) {
+    this.failedAttempts.delete(toolName);
   }
 
   private async updateOrganizationTheme(args: {
@@ -126,22 +281,119 @@ export class GraphQLTools {
       ref?: {
         palette?: {
           primary50?: string;
+          supportOne50?: string;
+          supportTwo50?: string;
+          supportThree50?: string;
+          supportFour50?: string;
+          supportFive50?: string;
+          supportSix50?: string;
         };
       };
       comp?: {
         layout?: {
           backgroundColor?: string;
+          textColor?: string;
         };
         card?: {
           borderRadius?: string;
         };
         button?: {
           borderRadius?: string;
+          lg?: {
+            height?: string;
+            fontSize?: string;
+          };
+          filled?: {
+            primary?: {
+              hovered?: {
+                container?: {
+                  color?: string;
+                };
+                text?: {
+                  color?: string;
+                };
+              };
+              enabled?: {
+                container?: {
+                  color?: string;
+                };
+                text?: {
+                  color?: string;
+                };
+              };
+            };
+          };
+          outlined?: {
+            primary?: {
+              enabled?: {
+                container?: {
+                  color?: string;
+                };
+                text?: {
+                  color?: string;
+                };
+              };
+            };
+          };
+        };
+        tabNav?: {
+          background?: {
+            active?: string;
+          };
+        };
+        selectionChip?: {
+          borderRadius?: string;
+          background?: {
+            active?: string;
+          };
+        };
+        textField?: {
+          textColor?: string;
+          labelColor?: string;
+          fontSize?: string;
+          borderColor?: string;
+          errorColor?: string;
+        };
+        helpText?: {
+          errorColor?: string;
+        };
+        statusBar?: {
+          containerColor?: string;
+          borderColor?: string;
+          borderRadius?: number;
+          activeColor?: string;
+        };
+        typography?: {
+          headingSmall?: {
+            fontFamily?: string;
+            fontSize?: string;
+          };
+          displayLargeVariant?: {
+            fontFamily?: string;
+            fontSize?: string;
+          };
+          bodySmall?: {
+            fontSize?: string;
+            fontWeight?: number;
+            lineHeight?: string;
+            letterSpacing?: string;
+          };
+        };
+        lineChart?: {
+          tension?: number;
+          color?: string;
+          showAxis?: boolean;
         };
       };
       sys?: {
         color?: {
           background?: string;
+        };
+        borderRadius?: {
+          xl?: string;
+        };
+        elevation?: {
+          surface?: string;
         };
       };
     };
@@ -234,6 +486,22 @@ export class GraphQLTools {
       }
 
       // Build the mutation input object with proper nesting
+      console.log('DEBUG: args.themeTokens received:', JSON.stringify(args.themeTokens, null, 2));
+      console.log('DEBUG: args.themeTokens type:', typeof args.themeTokens);
+      console.log('DEBUG: args.themeTokens keys:', args.themeTokens ? Object.keys(args.themeTokens) : 'undefined');
+      
+      // Check specifically for sys and elevation
+      if (args.themeTokens?.sys) {
+        console.log('DEBUG: args.themeTokens.sys found:', JSON.stringify(args.themeTokens.sys, null, 2));
+        if (args.themeTokens.sys.elevation) {
+          console.log('DEBUG: args.themeTokens.sys.elevation found:', JSON.stringify(args.themeTokens.sys.elevation, null, 2));
+        } else {
+          console.log('DEBUG: args.themeTokens.sys.elevation NOT FOUND');
+        }
+      } else {
+        console.log('DEBUG: args.themeTokens.sys NOT FOUND');
+      }
+      
       const mutationInput = {
         organizationId: organizationId,
         faviconLink: args.faviconLink || null,
@@ -241,6 +509,20 @@ export class GraphQLTools {
         themeTokens: args.themeTokens || {},
         theme: args.theme || {}
       };
+      
+      console.log('DEBUG: mutationInput.themeTokens:', JSON.stringify(mutationInput.themeTokens, null, 2));
+      
+      // Check mutation input specifically for sys and elevation
+      if (mutationInput.themeTokens?.sys) {
+        console.log('DEBUG: mutationInput.themeTokens.sys found:', JSON.stringify(mutationInput.themeTokens.sys, null, 2));
+        if (mutationInput.themeTokens.sys.elevation) {
+          console.log('DEBUG: mutationInput.themeTokens.sys.elevation found:', JSON.stringify(mutationInput.themeTokens.sys.elevation, null, 2));
+        } else {
+          console.log('DEBUG: mutationInput.themeTokens.sys.elevation NOT FOUND IN MUTATION INPUT');
+        }
+      } else {
+        console.log('DEBUG: mutationInput.themeTokens.sys NOT FOUND IN MUTATION INPUT');
+      }
 
       const mutation = `
         mutation updateOrganization($input: UpdateOrganizationInput!) {
@@ -253,6 +535,11 @@ export class GraphQLTools {
           }
         }
       `;
+
+      console.log('DEBUG: About to send GraphQL request with variables:', JSON.stringify({ input: mutationInput }, null, 2));
+      console.log('DEBUG: GraphQL variables input.themeTokens:', JSON.stringify(mutationInput.themeTokens, null, 2));
+      console.log('DEBUG: GraphQL variables input.themeTokens.sys:', JSON.stringify(mutationInput.themeTokens?.sys, null, 2));
+      console.log('DEBUG: GraphQL variables input.themeTokens.sys.elevation:', JSON.stringify(mutationInput.themeTokens?.sys?.elevation, null, 2));
 
       const result = await this.client.request(mutation, { input: mutationInput }) as any;
 
