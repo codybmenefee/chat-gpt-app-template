@@ -91,3 +91,51 @@ When adding new tools:
 - Check `.env.local` exists and is valid before running
 - Use `config_set` tool to update configuration via MCP
 - **Requires Node.js 22.0.0 or higher**
+
+## CRITICAL: Loop Prevention Rules
+
+### When Using MCP Tools
+**STOP IMMEDIATELY** if you encounter any of these scenarios:
+
+1. **"LOOP DETECTED" Error Messages**
+   - If you see "LOOP DETECTED: This tool has failed X times..." 
+   - **DO NOT** attempt to call the same tool again
+   - **DO NOT** try to "fix" the parameters and retry
+   - **STOP** and apologize to the user
+
+2. **Repeated Validation Failures**
+   - If the same tool fails 2+ times with similar validation errors
+   - **DO NOT** keep trying with the same approach
+   - **ASK** the user for clarification or different parameters
+
+3. **Missing Required Parameters**
+   - If a tool consistently fails due to missing required parameters
+   - **DO NOT** keep guessing or using placeholder values
+   - **ASK** the user to provide the missing information
+
+### Required Response Pattern
+When you detect a loop or repeated failures:
+
+```
+I apologize, but I'm unable to complete this task. The tool has failed multiple times with similar errors, indicating I may be missing required information or using incorrect parameters.
+
+To help me assist you better, could you please:
+1. [Specific guidance based on the error]
+2. [Alternative approach or different parameters needed]
+
+I want to avoid wasting your time with repeated failed attempts.
+```
+
+### What NOT to Do
+- ❌ **NEVER** retry the same tool call after 2+ failures
+- ❌ **NEVER** ignore "LOOP DETECTED" error messages
+- ❌ **NEVER** keep trying with placeholder or guessed values
+- ❌ **NEVER** attempt to "fix" parameters without user input
+- ❌ **NEVER** continue trying the same approach indefinitely
+
+### What TO Do
+- ✅ **STOP** after 2 failed attempts with similar errors
+- ✅ **APOLOGIZE** to the user for the difficulty
+- ✅ **ASK** for clarification or different parameters
+- ✅ **SUGGEST** alternative approaches
+- ✅ **EXPLAIN** what information you need to proceed
