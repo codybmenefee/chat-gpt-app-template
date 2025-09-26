@@ -1,6 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { readFileSync } from 'fs';
 import { ConfigManager } from '../config/config-manager.js';
 
 interface Tool {
@@ -26,7 +27,7 @@ export class GraphQLTools {
     this.tools = [
       {
         name: 'update_organization_theme',
-        description: 'Update organization theme, branding, and visual design settings. PREFERRED tool for uploading organization logos and updating branding elements. If organizationId is not provided, uses the configured organization ID from .env.local.',
+        description: 'Update organization theme, branding, and visual design settings. PRIMARY tool for organization logo uploads and theme customization. Handles colors, typography, layout, and all visual branding elements. Logo uploads are automatically linked to the organization. If organizationId is not provided, uses the configured organization ID from .env.local.',
         inputSchema: z.object({
           organizationId: z.string().min(1, 'Organization ID is required').optional(),
           
@@ -37,6 +38,7 @@ export class GraphQLTools {
           // Logo upload
           logoFile: z.object({
             fileName: z.string().min(1, 'File name is required'),
+            filePath: z.string().min(1, 'File path is required for logo upload'),
             userId: z.string().min(1, 'User ID is required for logo upload'),
             generateUniqueFileName: z.boolean().default(true),
             permissionType: z.enum(['PUBLIC', 'PRIVATE', 'RESTRICTED']).default('PUBLIC'),
@@ -174,6 +176,31 @@ export class GraphQLTools {
         }),
         handler: this.updateOrganizationTheme.bind(this),
       },
+      {
+        name: 'list_organization_logos',
+        description: 'List all logo files associated with an organization. Useful for verifying logo uploads and managing multiple logos.',
+        inputSchema: z.object({
+          organizationId: z.string().min(1, 'Organization ID is required').optional(),
+          limit: z.number().min(1).max(50).default(10).optional(),
+        }),
+        handler: this.listOrganizationLogos.bind(this),
+      },
+      {
+        name: 'get_logo_download_url',
+        description: 'Get the download URL for a specific logo file. Useful for verifying logo accessibility and getting the URL to display the logo.',
+        inputSchema: z.object({
+          fileDocumentId: z.string().min(1, 'File document ID is required'),
+        }),
+        handler: this.getLogoDownloadUrl.bind(this),
+      },
+      {
+        name: 'verify_organization_logo',
+        description: 'Verify that an organization has a logo and get its details. Returns the most recent logo file information.',
+        inputSchema: z.object({
+          organizationId: z.string().min(1, 'Organization ID is required').optional(),
+        }),
+        handler: this.verifyOrganizationLogo.bind(this),
+      },
     ];
   }
 
@@ -273,6 +300,7 @@ export class GraphQLTools {
     browserTabTitle?: string;
     logoFile?: {
       fileName: string;
+      filePath: string;
       userId: string;
       generateUniqueFileName: boolean;
       permissionType: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
@@ -443,7 +471,23 @@ export class GraphQLTools {
           const uploadUrlResponse = await this.client.request(uploadUrlQuery, uploadUrlVariables) as any;
           const { temporarySignedURL, timestamp } = uploadUrlResponse.fetchFileUploadUrl;
 
-          // Step 2: Create file document
+          // Step 2: Upload file to S3
+          console.log('📤 Uploading logo file to S3...');
+          const fileBuffer = readFileSync(args.logoFile.filePath);
+          const uploadResponse = await fetch(temporarySignedURL, {
+            method: 'PUT',
+            body: fileBuffer,
+            headers: {
+              'Content-Type': 'application/octet-stream',
+            },
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error(`Failed to upload logo file to S3: ${uploadResponse.status} ${uploadResponse.statusText}`);
+          }
+          console.log('✅ Logo file uploaded to S3 successfully');
+
+          // Step 3: Create file document
           const createFileMutation = `
             mutation createFileDocument($input: CreateFileDocumentInput!) {
               createFileDocument(input: $input) {
@@ -529,6 +573,7 @@ export class GraphQLTools {
           updateOrganization(input: $input) {
             organization {
               id
+              name
               __typename
             }
             __typename
@@ -574,6 +619,283 @@ export class GraphQLTools {
       };
     } catch (error) {
       throw new Error(`Theme update failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private async listOrganizationLogos(args: {
+    organizationId?: string;
+    limit?: number;
+  }) {
+    try {
+      const organizationId = args.organizationId || this.configManager.getOrganizationId();
+      const limit = args.limit || 10;
+
+      if (!organizationId) {
+        throw new Error('Organization ID is required. Set ORGANIZATION_ID environment variable or provide organizationId parameter.');
+      }
+
+      const query = `
+        query fetchFileDocuments($filter: FileDocumentQueryFilter) {
+          fetchFileDocuments(
+            input: {
+              filter: $filter
+              pagination: { 
+                perPage: ${limit}, 
+                sortDesc: true, 
+                sortField: "createdAt" 
+              }
+            }
+          ) {
+            fileDocuments {
+              id
+              name
+              fileName
+              type
+              objectType
+              objectId
+              createdAt
+              __typename
+            }
+            __typename
+          }
+        }
+      `;
+
+      const variables = {
+        filter: {
+          organizationId: organizationId,
+          types: ["LOGO"],
+          objectTypes: ["ORGANIZATION"]
+        }
+      };
+
+      const result = await this.client.request(query, variables) as any;
+      const logos = result.fetchFileDocuments.fileDocuments;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: true,
+              organizationId: organizationId,
+              logoCount: logos.length,
+              logos: logos.map((logo: any) => ({
+                id: logo.id,
+                name: logo.name,
+                fileName: logo.fileName,
+                createdAt: logo.createdAt,
+                isMostRecent: logos.indexOf(logo) === 0
+              })),
+              message: `Found ${logos.length} logo(s) for organization ${organizationId}`,
+              instructions: [
+                'Use get_logo_download_url with a logo ID to get the download URL',
+                'Use verify_organization_logo to check the most recent logo',
+                'The first logo in the list is the most recent'
+              ]
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to list organization logos: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private async getLogoDownloadUrl(args: {
+    fileDocumentId: string;
+  }) {
+    try {
+      const query = `
+        query fetchFileDocumentDownloadUrl($fileDocumentId: ObjectID!) {
+          fetchFileDocument(fileDocumentId: $fileDocumentId) {
+            fileDocument {
+              id
+              name
+              fileName
+              downloadUrl
+              mediaType
+              type
+              objectType
+              objectId
+              __typename
+            }
+            __typename
+          }
+        }
+      `;
+
+      const variables = {
+        fileDocumentId: args.fileDocumentId
+      };
+
+      const result = await this.client.request(query, variables) as any;
+      const fileDocument = result.fetchFileDocument.fileDocument;
+
+      if (!fileDocument) {
+        throw new Error(`Logo file not found with ID: ${args.fileDocumentId}`);
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: true,
+              fileDocument: {
+                id: fileDocument.id,
+                name: fileDocument.name,
+                fileName: fileDocument.fileName,
+                downloadUrl: fileDocument.downloadUrl,
+                mediaType: fileDocument.mediaType,
+                type: fileDocument.type,
+                objectType: fileDocument.objectType,
+                objectId: fileDocument.objectId
+              },
+              message: 'Logo download URL retrieved successfully',
+              instructions: [
+                'Use the downloadUrl to display the logo in your application',
+                'The URL is a signed S3 URL that expires after 5 minutes',
+                'For permanent access, store the fileDocument.id and call this tool again'
+              ]
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to get logo download URL: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private async verifyOrganizationLogo(args: {
+    organizationId?: string;
+  }) {
+    try {
+      const organizationId = args.organizationId || this.configManager.getOrganizationId();
+
+      if (!organizationId) {
+        throw new Error('Organization ID is required. Set ORGANIZATION_ID environment variable or provide organizationId parameter.');
+      }
+
+      // First, get the most recent logo
+      const listQuery = `
+        query fetchFileDocuments($filter: FileDocumentQueryFilter) {
+          fetchFileDocuments(
+            input: {
+              filter: $filter
+              pagination: { 
+                perPage: 1, 
+                sortDesc: true, 
+                sortField: "createdAt" 
+              }
+            }
+          ) {
+            fileDocuments {
+              id
+              name
+              fileName
+              type
+              objectType
+              objectId
+              createdAt
+              __typename
+            }
+            __typename
+          }
+        }
+      `;
+
+      const listVariables = {
+        filter: {
+          organizationId: organizationId,
+          types: ["LOGO"],
+          objectTypes: ["ORGANIZATION"]
+        }
+      };
+
+      const listResult = await this.client.request(listQuery, listVariables) as any;
+      const logos = listResult.fetchFileDocuments.fileDocuments;
+
+      if (logos.length === 0) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: false,
+                organizationId: organizationId,
+                hasLogo: false,
+                message: 'No logo found for this organization',
+                instructions: [
+                  'Use update_organization_theme with logoFile parameter to upload a logo',
+                  'Make sure to provide both fileName and filePath in the logoFile object'
+                ]
+              }, null, 2),
+            },
+          ],
+        };
+      }
+
+      const mostRecentLogo = logos[0];
+
+      // Get the download URL for the most recent logo
+      const downloadQuery = `
+        query fetchFileDocumentDownloadUrl($fileDocumentId: ObjectID!) {
+          fetchFileDocument(fileDocumentId: $fileDocumentId) {
+            fileDocument {
+              id
+              name
+              fileName
+              downloadUrl
+              mediaType
+              type
+              objectType
+              objectId
+              __typename
+            }
+            __typename
+          }
+        }
+      `;
+
+      const downloadVariables = {
+        fileDocumentId: mostRecentLogo.id
+      };
+
+      const downloadResult = await this.client.request(downloadQuery, downloadVariables) as any;
+      const fileDocument = downloadResult.fetchFileDocument.fileDocument;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: true,
+              organizationId: organizationId,
+              hasLogo: true,
+              logo: {
+                id: fileDocument.id,
+                name: fileDocument.name,
+                fileName: fileDocument.fileName,
+                downloadUrl: fileDocument.downloadUrl,
+                mediaType: fileDocument.mediaType,
+                type: fileDocument.type,
+                objectType: fileDocument.objectType,
+                objectId: fileDocument.objectId,
+                createdAt: mostRecentLogo.createdAt
+              },
+              message: 'Organization logo verified successfully',
+              instructions: [
+                'The logo is properly linked to the organization',
+                'Use the downloadUrl to display the logo',
+                'Use list_organization_logos to see all logos for this organization'
+              ]
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to verify organization logo: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

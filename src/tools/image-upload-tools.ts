@@ -26,17 +26,15 @@ export class ImageUploadTools {
     this.tools = [
       {
         name: 'upload_file',
-        description: 'Upload any file to S3 and create a file document record. Use for general file uploads (documents, images, etc.). For organization logos specifically, prefer update_organization_theme tool. If objectId/userId are not provided, uses configured values from .env.local.',
-        // NOTE: For organization logos, use update_organization_theme instead
+        description: 'Upload general files to S3 and create file document records. Use for documents, user avatars, and general images. DO NOT use for organization logos - use update_organization_theme instead. If objectId/userId are not provided, uses configured values from .env.local.',
         inputSchema: z.object({
           filePath: z.string().min(1, 'File path is required'),
           fileName: z.string().min(1, 'File name is required').optional(),
           objectType: z.enum(['ORGANIZATION', 'USER', 'CLIENT']).default('ORGANIZATION'),
           objectId: z.string().min(1, 'Object ID is required').optional(),
-          type: z.enum(['LOGO', 'AVATAR', 'DOCUMENT', 'IMAGE']).default('LOGO'),
+          type: z.enum(['AVATAR', 'DOCUMENT', 'IMAGE']).default('DOCUMENT'),
           userId: z.string().min(1, 'User ID is required').optional(),
           permissionType: z.enum(['PUBLIC', 'PRIVATE', 'RESTRICTED']).default('PUBLIC'),
-          updateTheme: z.boolean().default(false),
         }),
         handler: this.uploadFile.bind(this),
       },
@@ -83,10 +81,9 @@ export class ImageUploadTools {
     fileName?: string;
     objectType: 'ORGANIZATION' | 'USER' | 'CLIENT';
     objectId?: string;
-    type: 'LOGO' | 'AVATAR' | 'DOCUMENT' | 'IMAGE';
+    type: 'AVATAR' | 'DOCUMENT' | 'IMAGE';
     userId?: string;
     permissionType: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
-    updateTheme: boolean;
   }) {
     try {
       const objectId = args.objectId || this.configManager.getOrganizationId();
@@ -181,37 +178,6 @@ export class ImageUploadTools {
       const fileDocument = documentResult.createFileDocument.fileDocument;
       console.log('✅ File document created:', fileDocument.id);
 
-      // Step 4: Update organization theme if requested
-      let themeUpdateResult = null;
-      if (args.updateTheme && args.objectType === 'ORGANIZATION' && args.type === 'LOGO') {
-        console.log('🎨 Updating organization theme...');
-        const themeUpdateMutation = `
-          mutation updateOrganization($input: UpdateOrganizationInput!) {
-            updateOrganization(input: $input) {
-              organization {
-                id
-                __typename
-              }
-              __typename
-            }
-          }
-        `;
-
-        const themeVariables = {
-          input: {
-            organizationId: objectId,
-            logoFile: {
-              fileName: fileName,
-              userId: userId,
-              generateUniqueFileName: false,
-              permissionType: args.permissionType,
-            },
-          },
-        };
-
-        themeUpdateResult = await this.client.request(themeUpdateMutation, themeVariables) as any;
-        console.log('✅ Organization theme updated');
-      }
 
       return {
         content: [
@@ -220,13 +186,11 @@ export class ImageUploadTools {
             text: JSON.stringify({
               success: true,
               fileDocument: fileDocument,
-              themeUpdate: themeUpdateResult?.updateOrganization || null,
               message: 'File uploaded and processed successfully',
               steps: [
                 '1. ✅ Generated upload URL',
                 '2. ✅ Uploaded file to S3',
                 '3. ✅ Created file document',
-                args.updateTheme ? '4. ✅ Updated organization theme' : '4. ⏭️ Skipped theme update',
               ],
             }, null, 2),
           },
