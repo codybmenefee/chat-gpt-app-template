@@ -1,0 +1,7 @@
+fastapi
+fastmcp
+uvicorn
+rav
+python-dotenv
+requests
+pypdf

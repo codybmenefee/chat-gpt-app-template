@@ -1,11 +1,32 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Build output
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 
 # Environment variables
 .env
@@ -14,12 +35,12 @@ dist/
 .env.test.local
 .env.production.local
 
-# Configuration (keep template, ignore actual config)
-config.json
-
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
@@ -28,25 +49,18 @@ Thumbs.db
 # Logs
 *.log
 
-# TypeScript cache
-*.tsbuildinfo
-
-# Test and debug files (prevent future clutter)
-test-*.js
-debug-*.js
-*-test.js
-*-debug.js
-basic-test.js
-cursor-mcp-test.js
-simple-test-server.js
-debug-*.json
+# Test and debug files
+test-*.py
+debug-*.py
+*-test.py
+*-debug.py
 temp-*.json
-test-*.json
-
-# Shell scripts (unless essential)
-*.sh
+debug-*.json
 
 # Temporary files
 *.tmp
 *.temp
 .vercel
+
+# Archive (keep tracked for reference)
+# _archive/ is intentionally tracked

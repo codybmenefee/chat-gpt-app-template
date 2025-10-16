@@ -1,0 +1,8 @@
+scripts:
+  mcp_server: cd src && ../venv/bin/python main.py
+  dev: cd src && ../venv/bin/uvicorn main:app --reload --host 0.0.0.0 --port 8123
+  test_config: cd src && ../venv/bin/python test_config.py
+  test_pdf: cd src && ../venv/bin/python test_pdf.py
+  test_upload: cd src && ../venv/bin/python test_upload.py
+  test_theme: cd src && ../venv/bin/python test_theme.py
+  test_all: cd src && ../venv/bin/python test_main_simple.py
