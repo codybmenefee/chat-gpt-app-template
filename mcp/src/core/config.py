@@ -25,12 +25,20 @@ def get_organization_id() -> str:
         raise ValueError("ORGANIZATION_ID not found in .env.local file")
     return org_id
 
+def get_user_id() -> str:
+    """Get user ID from environment variables."""
+    user_id = os.getenv('USER_ID')
+    if not user_id:
+        raise ValueError("USER_ID not found in .env.local file")
+    return user_id
+
 def is_configured() -> bool:
     """Check if all required configuration is present."""
     try:
         get_api_key()
         get_graphql_endpoint()
         get_organization_id()
+        get_user_id()
         return True
     except ValueError:
         return False

@@ -13,79 +13,14 @@ import requests
 # Load environment variables from .env.local
 load_dotenv('.env.local')
 
-def get_api_key() -> str:
-    """Get API key from environment variables."""
-    api_key = os.getenv('API_KEY')
-    if not api_key:
-        raise ValueError("API_KEY not found in .env.local file")
-    return api_key
-
-def get_graphql_endpoint() -> str:
-    """Get GraphQL endpoint from environment variables."""
-    endpoint = os.getenv('GRAPHQL_ENDPOINT')
-    if not endpoint:
-        raise ValueError("GRAPHQL_ENDPOINT not found in .env.local file")
-    return endpoint
-
-def get_organization_id() -> str:
-    """Get organization ID from environment variables."""
-    org_id = os.getenv('ORGANIZATION_ID')
-    if not org_id:
-        raise ValueError("ORGANIZATION_ID not found in .env.local file")
-    return org_id
-
-def get_user_id() -> str:
-    """Get user ID from environment variables."""
-    user_id = os.getenv('USER_ID')
-    if not user_id:
-        raise ValueError("USER_ID not found in .env.local file")
-    return user_id
-
-def is_configured() -> bool:
-    """Check if all required configuration is present."""
-    try:
-        get_api_key()
-        get_graphql_endpoint()
-        get_organization_id()
-        get_user_id()
-        return True
-    except ValueError:
-        return False
-
-def execute_graphql_mutation(query: str, variables: dict = None) -> dict:
-    """Execute a GraphQL mutation."""
-    endpoint = get_graphql_endpoint()
-    api_key = get_api_key()
-    
-    headers = {
-        'Authorization-API': api_key,
-        'Content-Type': 'application/json'
-    }
-    
-    payload = {
-        'query': query,
-        'variables': variables or {}
-    }
-    
-    try:
-        response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        
-        data = response.json()
-        
-        # Check for GraphQL errors
-        if 'errors' in data:
-            error_messages = [error.get('message', 'Unknown error') for error in data['errors']]
-            raise Exception(f"GraphQL errors: {'; '.join(error_messages)}")
-        
-        return data.get('data', {})
-        
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"HTTP request failed: {str(e)}")
-    except json.JSONDecodeError as e:
-        raise Exception(f"Invalid JSON response: {str(e)}")
-    except Exception as e:
-        raise Exception(f"GraphQL mutation failed: {str(e)}")
+from core.config import (
+    get_api_key,
+    get_graphql_endpoint,
+    get_organization_id,
+    get_user_id,
+    is_configured
+)
+from core.graphql_client import execute_graphql_mutation
 
 def validate_file_path(path: str) -> bool:
     """Check if file exists and is readable."""

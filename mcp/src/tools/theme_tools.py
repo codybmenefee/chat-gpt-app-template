@@ -13,79 +13,14 @@ import requests
 # Load environment variables from .env.local
 load_dotenv('.env.local')
 
-def get_api_key() -> str:
-    """Get API key from environment variables."""
-    api_key = os.getenv('API_KEY')
-    if not api_key:
-        raise ValueError("API_KEY not found in .env.local file")
-    return api_key
-
-def get_graphql_endpoint() -> str:
-    """Get GraphQL endpoint from environment variables."""
-    endpoint = os.getenv('GRAPHQL_ENDPOINT')
-    if not endpoint:
-        raise ValueError("GRAPHQL_ENDPOINT not found in .env.local file")
-    return endpoint
-
-def get_organization_id() -> str:
-    """Get organization ID from environment variables."""
-    org_id = os.getenv('ORGANIZATION_ID')
-    if not org_id:
-        raise ValueError("ORGANIZATION_ID not found in .env.local file")
-    return org_id
-
-def get_user_id() -> str:
-    """Get user ID from environment variables."""
-    user_id = os.getenv('USER_ID')
-    if not user_id:
-        raise ValueError("USER_ID not found in .env.local file")
-    return user_id
-
-def is_configured() -> bool:
-    """Check if all required configuration is present."""
-    try:
-        get_api_key()
-        get_graphql_endpoint()
-        get_organization_id()
-        get_user_id()
-        return True
-    except ValueError:
-        return False
-
-def execute_graphql_mutation(query: str, variables: dict = None) -> dict:
-    """Execute a GraphQL mutation."""
-    endpoint = get_graphql_endpoint()
-    api_key = get_api_key()
-    
-    headers = {
-        'Authorization-API': api_key,
-        'Content-Type': 'application/json'
-    }
-    
-    payload = {
-        'query': query,
-        'variables': variables or {}
-    }
-    
-    try:
-        response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        
-        data = response.json()
-        
-        # Check for GraphQL errors
-        if 'errors' in data:
-            error_messages = [error.get('message', 'Unknown error') for error in data['errors']]
-            raise Exception(f"GraphQL errors: {'; '.join(error_messages)}")
-        
-        return data.get('data', {})
-        
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"HTTP request failed: {str(e)}")
-    except json.JSONDecodeError as e:
-        raise Exception(f"Invalid JSON response: {str(e)}")
-    except Exception as e:
-        raise Exception(f"GraphQL mutation failed: {str(e)}")
+from core.config import (
+    get_api_key,
+    get_graphql_endpoint,
+    get_organization_id,
+    get_user_id,
+    is_configured
+)
+from core.graphql_client import execute_graphql_mutation
 
 def validate_hex_color(color: str) -> bool:
     """Validate hex color format #RRGGBB"""
@@ -94,6 +29,57 @@ def validate_hex_color(color: str) -> bool:
 def validate_css_value(value: str, pattern: str) -> bool:
     """Validate CSS value format"""
     return bool(re.match(pattern, value))
+
+def validate_theme_object(theme: Dict[str, Any]) -> Optional[str]:
+    """
+    Validate theme object for common invalid fields.
+    Returns error message if invalid, None if valid.
+    """
+    if not theme:
+        return None
+    
+    # Common invalid fields that should be in themeTokens instead
+    invalid_fields = {
+        'name': 'Theme names should not be set in the theme object',
+        'primaryColor': 'Use themeTokens.ref.palette.primary50 instead',
+        'secondaryColor': 'Use themeTokens.ref.palette.supportOne50 instead', 
+        'backgroundColor': 'Use themeTokens.comp.layout.backgroundColor instead',
+        'textColor': 'Use themeTokens.comp.layout.textColor instead',
+        'fontColor': 'Use themeTokens.comp.layout.textColor instead',
+        'headerColor': 'Use themeTokens.comp.layout.backgroundColor instead',
+        'bodyColor': 'Use themeTokens.comp.layout.backgroundColor instead'
+    }
+    
+    found_invalid = []
+    suggestions = []
+    
+    for field_name, suggestion in invalid_fields.items():
+        if field_name in theme:
+            found_invalid.append(field_name)
+            suggestions.append(f"- {field_name}: {suggestion}")
+    
+    if found_invalid:
+        error_msg = f"Invalid fields found in theme object: {', '.join(found_invalid)}\n\n"
+        error_msg += "These fields should be moved to themeTokens instead:\n"
+        error_msg += "\n".join(suggestions)
+        error_msg += "\n\nExample correct structure:\n"
+        error_msg += "themeTokens: {\n"
+        error_msg += "  ref: {\n"
+        error_msg += "    palette: {\n"
+        error_msg += "      primary50: '#888888',\n"
+        error_msg += "      supportOne50: '#555555'\n"
+        error_msg += "    }\n"
+        error_msg += "  },\n"
+        error_msg += "  comp: {\n"
+        error_msg += "    layout: {\n"
+        error_msg += "      backgroundColor: '#f0f0f0',\n"
+        error_msg += "      textColor: '#222222'\n"
+        error_msg += "    }\n"
+        error_msg += "  }\n"
+        error_msg += "}"
+        return error_msg
+    
+    return None
 
 def register_theme_tools(mcp):
     """Register organization theme and logo management tools with FastMCP."""
@@ -114,13 +100,37 @@ def register_theme_tools(mcp):
         Logo uploads are automatically linked to the organization.
         If organizationId is not provided, uses the configured organization ID from .env.local.
         
+        IMPORTANT: The 'theme' parameter has limited fields. For complex color customization,
+        use 'themeTokens' instead. Common invalid fields in 'theme' include:
+        - name, primaryColor, secondaryColor, backgroundColor, textColor, fontColor, headerColor, bodyColor
+        
         Args:
             organization_id: Organization ID (uses config if not provided)
             favicon_link: URL for favicon
             browser_tab_title: Title for browser tab
             logo_file: Logo file information (fileName, filePath, userId, etc.)
-            theme_tokens: Theme token configuration
-            theme: Additional theme configuration
+            theme_tokens: Theme token configuration for complex customization
+            theme: Simple theme settings (limited fields - use themeTokens for colors)
+            
+        Examples:
+            # Simple theme update (limited fields)
+            theme = {"sideBarColor": "#888888"}
+            
+            # Complex color customization (recommended)
+            theme_tokens = {
+                "ref": {
+                    "palette": {
+                        "primary50": "#888888",
+                        "supportOne50": "#555555"
+                    }
+                },
+                "comp": {
+                    "layout": {
+                        "backgroundColor": "#f0f0f0",
+                        "textColor": "#222222"
+                    }
+                }
+            }
         """
         try:
             # Validate configuration
@@ -150,6 +160,12 @@ def register_theme_tools(mcp):
                         for color_key, color_value in layout.items():
                             if color_value and not validate_hex_color(color_value):
                                 return f"Error: Invalid hex color format for layout.{color_key}: {color_value}. Use format #RRGGBB"
+            
+            # Validate theme object for common invalid fields
+            if theme:
+                validation_error = validate_theme_object(theme)
+                if validation_error:
+                    return f"Validation Error: {validation_error}"
             
             # TODO: Add comprehensive theme token schema validation (all 50+ tokens)
             # TODO: Add logo upload integration (combine upload_file + updateOrganization)
@@ -189,6 +205,9 @@ def register_theme_tools(mcp):
             
             if theme:
                 mutation_input["theme"] = theme
+            
+            # Debug logging
+            print(f"DEBUG: mutation_input = {json.dumps(mutation_input, indent=2)}")
             
             # Execute GraphQL mutation
             result = execute_graphql_mutation(mutation, {"input": mutation_input})
@@ -434,7 +453,12 @@ def update_organization_theme(
     theme_tokens: Optional[Dict[str, Any]] = None,
     theme: Optional[Dict[str, Any]] = None
 ) -> str:
-    """Update organization theme, branding, and visual design settings."""
+    """Update organization theme, branding, and visual design settings.
+    
+    IMPORTANT: The 'theme' parameter has limited fields. For complex color customization,
+    use 'themeTokens' instead. Common invalid fields in 'theme' include:
+    - name, primaryColor, secondaryColor, backgroundColor, textColor, fontColor, headerColor, bodyColor
+    """
     try:
         # Validate configuration
         if not is_configured():
@@ -463,6 +487,12 @@ def update_organization_theme(
                     for color_key, color_value in layout.items():
                         if color_value and not validate_hex_color(color_value):
                             return f"Error: Invalid hex color format for layout.{color_key}: {color_value}. Use format #RRGGBB"
+        
+        # Validate theme object for common invalid fields
+        if theme:
+            validation_error = validate_theme_object(theme)
+            if validation_error:
+                return f"Validation Error: {validation_error}"
         
         print(f"🎨 Updating organization theme for: {org_id}")
         
@@ -496,6 +526,9 @@ def update_organization_theme(
         
         if theme:
             mutation_input["theme"] = theme
+        
+        # Debug logging
+        print(f"DEBUG: mutation_input = {json.dumps(mutation_input, indent=2)}")
         
         # Execute GraphQL mutation
         result = execute_graphql_mutation(mutation, {"input": mutation_input})

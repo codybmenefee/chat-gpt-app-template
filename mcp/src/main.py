@@ -4,10 +4,10 @@ Migrated from TypeScript to Python with modular structure.
 """
 
 from fastmcp import FastMCP
-from config_tools import register_config_tools
-from pdf_tools import register_pdf_tools
-from upload_tools import register_upload_tools
-from theme_tools import register_theme_tools
+from tools.config_tools import register_config_tools
+from tools.pdf_tools import register_pdf_tools
+from tools.upload_tools import register_upload_tools
+from tools.theme_tools import register_theme_tools
 
 # Create FastMCP instance
 mcp = FastMCP()
