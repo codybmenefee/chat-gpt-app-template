@@ -12,17 +12,20 @@ A minimal template for building ChatGPT apps using FastMCP. This template demons
 ## Quick Start
 
 ### Prerequisites
+
 - Python 3.8 or higher
 
 ### Installation
 
 1. **Clone this template:**
+
    ```bash
    git clone <your-repo-url>
    cd simple-chatgpt-template
    ```
 
 2. **Set up Python environment:**
+
    ```bash
    cd mcp
    python -m venv venv
@@ -31,6 +34,7 @@ A minimal template for building ChatGPT apps using FastMCP. This template demons
    ```
 
 3. **Start the MCP server:**
+
    ```bash
    python src/main.py
    ```
@@ -45,22 +49,25 @@ A minimal template for building ChatGPT apps using FastMCP. This template demons
 
 For local development, ChatGPT needs to access your MCP server over the internet. Use ngrok to create a secure tunnel to your local server.
 
-
 ## Available Tools
 
 ### `add_numbers`
+
 Adds two numbers together and returns a formatted result.
 
 **Example:**
-```
+
+```text
 Use the add_numbers tool to calculate 5 + 3
 ```
 
 ### `hello_world_widget`
+
 Displays a custom UI widget inline in ChatGPT conversation.
 
 **Example:**
-```
+
+```text
 Use the hello_world_widget tool to show the demo widget
 ```
 
@@ -69,6 +76,7 @@ Use the hello_world_widget tool to show the demo widget
 ### Adding a New Tool
 
 1. **Create a new tool file** in `mcp/src/tools/`:
+
    ```python
    # my_tools.py
    from fastmcp import FastMCP
@@ -84,6 +92,7 @@ Use the hello_world_widget tool to show the demo widget
    ```
 
 2. **Import and register** in `main.py`:
+
    ```python
    from tools.my_tools import register_my_tools
    
@@ -96,6 +105,7 @@ Use the hello_world_widget tool to show the demo widget
 ### Adding a Custom Widget
 
 1. **Create widget HTML** in your tool file:
+
    ```python
    @mcp.resource(
        uri="ui://widget/my-widget.html",
@@ -117,6 +127,7 @@ Use the hello_world_widget tool to show the demo widget
    ```
 
 2. **Create tool** that uses the widget:
+
    ```python
    @mcp.tool(
        name="my_widget",
@@ -132,7 +143,7 @@ Use the hello_world_widget tool to show the demo widget
 
 ## Project Structure
 
-```
+```text
 simple-chatgpt-template/
 ├── README.md                 # This file
 └── mcp/                     # MCP server implementation
@@ -158,15 +169,18 @@ simple-chatgpt-template/
 ## Troubleshooting
 
 ### Server Won't Start
+
 - Check Python version (3.8+ required)
 - Verify all dependencies installed: `pip install -r requirements.txt`
 
 ### ChatGPT Can't Connect
+
 - Verify server is running: `curl http://localhost:8123/mcp`
 - Verify ngrok tunnel is open
 - Check firewall settings
 
 ### Tools Not Working
+
 - Check server logs for errors
 - Verify tool registration in `main.py`
 - Test tools individually
