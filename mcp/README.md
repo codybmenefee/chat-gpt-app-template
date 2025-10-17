@@ -78,6 +78,9 @@ RETRIES=3
 - **`upload_file`** - Upload files to cloud storage and create file records
 - **`view_pdf`** - Extract and view text content from PDF files
 
+### UX Components
+- **`hello_world_widget`** - Simple hello world widget demonstrating ChatGPT's custom UI capabilities
+
 ## Usage Examples
 
 ### Update Organization Theme
@@ -95,10 +98,33 @@ Use the upload_file tool to upload documents, images, or other files to your org
 Use the view_pdf tool to extract and read text content from PDF files
 ```
 
+### Hello World Widget
+```text
+Use the hello_world_widget tool to display a simple widget in ChatGPT
+```
+
 ### Check Configuration
 ```text
 Use the config_status tool to verify your server configuration is complete
 ```
+
+## Widget Architecture
+
+The `hello_world_widget` demonstrates OpenAI's Apps SDK custom UI capabilities:
+
+### How It Works
+1. **Resource Registration**: The widget HTML is registered as an MCP resource with `ui://widget/hello-world.html`
+2. **MIME Type**: Uses `text/html+skybridge` for proper ChatGPT rendering
+3. **Tool Metadata**: Tool includes `openai/outputTemplate` pointing to the resource URI
+4. **Inline Rendering**: Widget renders directly in ChatGPT conversation
+
+### Implementation Details
+- **Resource**: Registered with FastMCP's `@mcp.resource()` decorator
+- **Tool**: Uses `@mcp.tool()` with proper metadata
+- **HTML**: Simple HTML/CSS/JS with `window.openai` API integration
+- **No Dependencies**: Pure HTML implementation, no React build required
+
+For more details, see the [OpenAI Apps SDK documentation](https://developers.openai.com/apps-sdk/build/custom-ux).
 
 ## Development
 
@@ -123,7 +149,13 @@ mcp/
 │   ├── config_tools.py      # Configuration tools
 │   ├── pdf_tools.py         # PDF processing tools
 │   ├── upload_tools.py      # File upload tools
-│   └── theme_tools.py       # Theme management tools
+│   ├── theme_tools.py       # Theme management tools
+│   └── ux_tools.py          # UX component demo tools
+├── web/                     # React component source
+│   ├── src/component.tsx    # React component
+│   ├── dist/component.js    # Bundled component
+│   ├── package.json         # Node dependencies
+│   └── tsconfig.json        # TypeScript config
 ├── requirements.txt         # Python dependencies
 ├── rav.yaml                # RAV script configuration
 └── .env.local              # Environment configuration
