@@ -1,5 +1,5 @@
 """
-Hello World Widget for OneAgent MCP server.
+Hello World Widget for ChatGPT App Template.
 Implements proper OpenAI Apps SDK widget pattern with resource registration.
 """
 
